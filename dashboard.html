@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PneumoScan AI | Dashboard</title>
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/dashboard.css" />
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  </head>
+
+  <body>
+    <!-- ================= HEADER ================= -->
+    <header>
+      <div class="navbar">
+        <div class="logo">
+          <i class="fas fa-lungs logo-icon"></i>
+          <span class="logo-text">PneumoScan AI</span>
+        </div>
+
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="nav-links" id="topNavLinks">
+          <a href="#" class="nav-link active" data-page="upload">Upload X-Ray</a>
+          <a href="#" class="nav-link" data-page="history">History</a>
+          <a href="#" class="nav-link" data-page="profile">Profile</a>
+          <a href="#" class="nav-link" data-page="settings">Settings</a>
+        </div>
+
+        <div class="user-menu">
+          <div class="user-avatar" id="userAvatar">DR</div>
+          <div class="dropdown-menu" id="dropdownMenu">
+            <a href="#" class="dropdown-item" data-page="profile">
+              <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="#" class="dropdown-item" id="themeToggle">
+              <i class="fas fa-moon"></i> Dark Mode
+            </a>
+            <a href="#" class="dropdown-item" id="logoutBtn">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= LAYOUT ================= -->
+    <div class="dashboard">
+      <!-- ===== Sidebar ===== -->
+      <aside class="sidebar">
+        <ul class="sidebar-menu">
+          <li>
+            <a href="#" class="sidebar-link active" data-page="upload">
+              <i class="fas fa-upload"></i> Upload X-Ray
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-page="history">
+              <i class="fas fa-history"></i> History
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-page="profile">
+              <i class="fas fa-user"></i> Profile
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-page="settings">
+              <i class="fas fa-cog"></i> Settings
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- ===== Main ===== -->
+      <main class="main-content">
+        <!-- ================= Upload Page ================= -->
+        <div class="page active" id="upload-page">
+          <h1 class="page-title">Upload Chest X-Ray</h1>
+
+          <div class="upload-container">
+            <!-- Patient Form -->
+            <div class="patient-form">
+              <h2 class="form-title">Patient Information</h2>
+
+              <form id="patientForm">
+                <div class="form-group">
+                  <label for="patientName">Full Name</label>
+                  <input type="text" id="patientName" class="form-control" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="patientAge">Age</label>
+                  <input type="number" id="patientAge" class="form-control" required />
+                </div>
+
+                <!-- Gender (ID FIXED to match JS) -->
+                <div class="form-group">
+                  <label for="patientGender">Gender</label>
+                  <select id="patientGender" class="form-control" required>
+                    <option value="">Select Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+              </form>
+            </div>
+
+            <!-- X-Ray Upload / Preview -->
+            <div class="xray-preview">
+              <h2 class="form-title">X-Ray Image</h2>
+
+              <div class="xray-placeholder" id="xrayUpload">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drag & Drop X-Ray Image or Click to Browse</p>
+                <input type="file" id="xrayFile" accept="image/*" style="display:none" />
+              </div>
+
+              <img
+                src=""
+                alt="X-Ray Preview"
+                class="xray-image xray-image--large"
+                id="xrayPreview"
+              />
+
+              <button type="button" class="btn btn-primary" id="analyzeBtn" style="display:none">
+                Analyze X-Ray
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= Analysis Panel (Inline) ================= -->
+          <!-- Updated terminology and structure for Normal/Pneumonia cases -->
+          <div id="analysisSlider" style="display:none; margin-top:1rem">
+            <div class="analysis-card">
+              <div class="analysis-header">
+                <h2 class="result-title">Analysis</h2>
+                <button id="closeAnalysisSlider" class="btn btn-secondary" type="button">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="analysis-body">
+                <!-- Row: Original + Analyzed X-Ray -->
+                <div class="analysis-grid">
+                  <div>
+                    <h3 class="form-title">Uploaded X-Ray</h3>
+                    <div class="image-box">
+                      <img
+                        id="sliderOriginalImg"
+                        src=""
+                        alt="Original X-Ray"
+                        class="xray-image xray-image--panel"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <!-- "Grad-CAM Heatmap" → "Analyzed X-Ray" -->
+                    <h3 class="form-title">Analyzed X-Ray</h3>
+                    <div class="image-box" style="position:relative">
+                      <!--  Updated placeholder text for new terminology -->
+                      <div id="sliderHeatmapPlaceholder" class="heatmap-placeholder" style="text-align:center; flex-direction:column">
+                        <i class="fas fa-info-circle"></i>
+                        <div id="heatmapStatusText">Analyzed view unavailable. Run <strong>Further Analysis</strong>.</div>
+                      </div>
+
+                      <!--  This will show either original image (Normal) or heatmap (Pneumonia) -->
+                      <img
+                        id="sliderHeatmapImg"
+                        src=""
+                        alt="Analyzed X-Ray"
+                        class="xray-image xray-image--panel"
+                        style="display:none"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Full-width Comment section -->
+                  <!--  "AI Caption" → "Comment" -->
+                  <div class="clip-caption-box" style="grid-column: 1/-1;">
+                    <div class="clip-caption-icon">
+                      <i class="fas fa-comment-medical"></i>
+                    </div>
+                    <div class="clip-caption-content">
+                      <div class="clip-caption-label">Comment</div>
+                      <!--  ID remains same but terminology updated -->
+                      <div class="clip-caption-text" id="clipCaptionText">
+                        Run <strong>Further Analysis</strong> to generate comment.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="divider" />
+
+                <!-- Row: Patient Details + AI Result -->
+                <div class="details-grid">
+                  <div>
+                    <h3 class="form-title">Patient Details</h3>
+                     <div class="patient-details">
+                       <div><strong>Name:</strong> <span id="sliderPatientName">—</span></div>
+                       <div><strong>Age:</strong> <span id="sliderPatientAge">—</span></div>
+                       <!-- ID FIXED to match JS -->
+                       <div><strong>Gender:</strong> <span id="sliderPatientGender">—</span></div>
+                     </div>
+                  </div>
+
+                  <div>
+                    <h3 class="form-title">AI Result</h3>
+                    <div class="result-block">
+                      <div id="sliderResultValue" class="result-value">
+                        Waiting for results...
+                      </div>
+                      <div id="sliderResultConfidence" class="result-confidence">
+                        Confidence: --%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="analysis-footer" style="gap:.5rem; flex-wrap:wrap">
+                <!-- This button will be hidden/disabled for Normal cases -->
+                <button id="furtherAnalysisBtn" class="btn btn-secondary" type="button" disabled>
+                  <i class="fas fa-layer-group"></i> Further Analysis
+                </button>
+
+                <!-- ID FIXED so JS can attach click handler -->
+                <button id="saveReportBtn" class="btn btn-primary" type="button" disabled>
+                  <i class="fas fa-save"></i> Save Report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= History Page ================= -->
+        <div class="page" id="history-page">
+          <h1 class="page-title">Scan History</h1>
+          <div
+            class="history-toolbar"
+            id="historyToolbar"
+            style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin:12px 0;"
+          >
+            <input
+              id="historySearch"
+              type="search"
+              placeholder="Search by name, age, gender, result, confidence or Report ID..."
+              style="max-width:420px; width:100%; padding:10px 12px; border:1px solid #e0e0e0; border-radius:10px; outline:none;"
+            />
+          </div>
+
+          <div class="history-list active" id="historyList">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Result</th>
+                  <th>Confidence</th>
+                  <th>Report ID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================= Profile Page ================= -->
+        <div class="page" id="profile-page">
+          <h1 class="page-title">My Profile</h1>
+
+          <div class="profile-container">
+            <div class="profile-sidebar">
+              <div class="profile-card">
+                <div class="profile-avatar" id="profileAvatar">DR</div>
+                <h3 class="profile-name" id="profileName">Dr. Radiologist</h3>
+                <p class="profile-email" id="profileEmail">loading...</p>
+
+                <button class="btn btn-primary" id="editProfileBtn" type="button">Edit Profile</button>
+
+                <div class="profile-actions" id="profileActions" style="display:none; margin-top:1rem">
+                  <button class="btn btn-secondary" id="cancelEditBtn" style="margin-bottom:0.5rem" type="button">
+                    Cancel
+                  </button>
+                  <button class="btn btn-primary" id="saveProfileBtn" type="button">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-details">
+              <div class="detail-group">
+                <h3 class="form-title">Professional Information</h3>
+
+                <div class="form-group">
+                  <label class="detail-label">Specialization</label>
+                  <div class="detail-value" id="profileSpecializationDisplay">Loading...</div>
+                  <input
+                    type="text"
+                    id="profileSpecializationInput"
+                    class="form-control"
+                    style="display:none"
+                    placeholder="Enter specialization"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="detail-label">Hospital/Clinic</label>
+                  <div class="detail-value" id="profileHospitalDisplay">Loading...</div>
+                  <input
+                    type="text"
+                    id="profileHospitalInput"
+                    class="form-control"
+                    style="display:none"
+                    placeholder="Enter hospital/clinic"
+                  />
+                </div>
+              </div>
+
+              <div class="detail-group">
+                <h3 class="form-title">Contact Information</h3>
+
+                <div class="form-group">
+                  <label class="detail-label">Phone Number</label>
+                  <div class="detail-value" id="profilePhoneDisplay">Loading...</div>
+                  <input
+                    type="tel"
+                    id="profilePhoneInput"
+                    class="form-control"
+                    style="display:none"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="detail-label">Address</label>
+                  <div class="detail-value" id="profileAddressDisplay">Loading...</div>
+                  <textarea
+                    id="profileAddressInput"
+                    class="form-control"
+                    style="display:none"
+                    rows="3"
+                    placeholder="Enter address"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= Settings Page ================= -->
+        <!--  Removed Email Notifications, only Push Notifications remain -->
+        <div class="page" id="settings-page">
+          <h1 class="page-title">Settings</h1>
+
+          <div class="settings-container">
+            <div class="setting-group">
+              <h2 class="setting-title">Appearance</h2>
+
+              <div class="setting-item">
+                <span class="setting-label">Dark Mode</span>
+                <label class="switch">
+                  <input type="checkbox" id="darkModeToggle" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <h2 class="setting-title">Notifications</h2>
+
+              <!--  Email Notifications removed completely -->
+              <div class="setting-item">
+                <span class="setting-label">Push Notifications</span>
+                <label class="switch">
+                  <input type="checkbox" id="pushNotifications" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <h2 class="setting-title">Account</h2>
+
+              <div class="setting-item">
+                <span class="setting-label">Change Password</span>
+                <button onclick="openChangePasswordModal()" class="btn btn-secondary">
+                  Change Password
+                </button>
+              </div>
+
+              <div class="setting-item">
+                <span class="setting-label">Delete Account</span>
+                <button class="btn btn-danger" onclick="openDeleteAccountModal()">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toasts -->
+        <!--  All toasts will be gated by Push Notifications toggle -->
+        <div id="toastContainer" class="toast-container"></div>
+      </main>
+    </div>
+
+    <!-- ================= VALIDATION POPUP ================= -->
+    <!--  Validation popup remains same -->
+    <div id="validationPopup" class="validation-popup">
+      <div class="validation-content">
+        <div id="validationIcon" class="validation-icon validating">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 id="validationTitle" class="validation-title">Validating X-ray Image</h3>
+        <p id="validationMessage" class="validation-message">
+          Checking if this is a valid chest X-ray...
+        </p>
+        <div class="validation-progress">
+          <div id="validationProgressBar" class="validation-progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= ANALYSIS PROGRESS MODAL ================= -->
+    <!--  Phase labels updated for new terminology -->
+    <div id="analysisProgressContainer" class="analysis-progress-container">
+      <div class="analysis-progress-modal">
+        <h2 class="analysis-title">AI Analysis in Progress</h2>
+
+        <!-- Phase 1 -->
+        <div id="phase1" class="analysis-phase">
+          <div class="phase-title">
+            <div class="phase-icon">1</div>
+            <span class="phase-label">Detecting Pneumonia</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="phase1Progress" class="progress-bar"></div>
+          </div>
+          <div id="phase1Text" class="progress-text">Initializing pneumonia detection model...</div>
+        </div>
+
+        <!-- Phase 2 -->
+        <!--  This phase will be skipped for Normal cases -->
+        <div id="phase2" class="analysis-phase">
+          <div class="phase-title">
+            <div class="phase-icon">2</div>
+            <span class="phase-label">Determining Type of Pneumonia</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="phase2Progress" class="progress-bar"></div>
+          </div>
+          <div id="phase2Text" class="progress-text">Waiting for pneumonia detection...</div>
+        </div>
+
+        <!-- Phase 3 -->
+        <!--  This phase will be skipped for Normal cases -->
+        <div id="phase3" class="analysis-phase">
+          <div class="phase-title">
+            <div class="phase-icon">3</div>
+            <span class="phase-label">Generating Analyzed X-Ray</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="phase3Progress" class="progress-bar"></div>
+          </div>
+          <div id="phase3Text" class="progress-text">Preparing visualization...</div>
+        </div>
+
+        <!-- Phase 4 -->
+        <!--  Label updated from "Generating AI Caption" to "Generating Comment" -->
+        <div id="phase4" class="analysis-phase">
+          <div class="phase-title">
+            <div class="phase-icon">4</div>
+            <span class="phase-label">Generating Comment</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="phase4Progress" class="progress-bar"></div>
+          </div>
+          <div id="phase4Text" class="progress-text">Summarizing findings...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= REAL-TIME STATUS MODAL (kept for future) ================= -->
+    <!--  Kept as backup but not used in current flow -->
+    <div id="realTimeStatusModal" class="real-time-status-modal">
+      <div class="status-content">
+        <div class="status-icon">
+          <i class="fas fa-microscope"></i>
+        </div>
+        <h3 class="status-title" id="statusTitle">Processing X-Ray</h3>
+        <p class="status-message" id="statusMessage">Analyzing image for pneumonia detection...</p>
+        <div class="status-details" id="statusDetails">
+          <div class="status-item">
+            <span class="status-label">Current Stage:</span>
+            <span class="status-value" id="currentStage">Initializing</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Model:</span>
+            <span class="status-value" id="currentModel">Loading...</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Progress:</span>
+            <span class="status-value" id="currentProgress">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= RESULT ANNOUNCEMENT MODAL (optional) ================= -->
+    <!--  This will show quick result popup for Normal cases -->
+    <div id="resultAnnouncementModal" class="result-announcement-modal">
+      <div class="announcement-content">
+        <div class="announcement-icon" id="announcementIcon">
+          <i class="fas fa-stethoscope"></i>
+        </div>
+        <h3 class="announcement-title" id="announcementTitle">Analysis Complete</h3>
+        <div class="announcement-result" id="announcementResult">
+          <div class="result-type" id="resultType">Normal</div>
+          <div class="result-confidence" id="resultConfidence">Confidence: 95%</div>
+        </div>
+        <p class="announcement-message" id="announcementMessage">
+          The chest X-ray appears normal with no signs of pneumonia.
+        </p>
+        <button class="btn btn-primary" id="closeAnnouncementBtn">View Detailed Report</button>
+      </div>
+    </div>
+
+    <!-- ================= Change Password Modal ================= -->
+   
+    <div id="change-password-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" id="close-password-modal">&times;</span>
+        <h2>Change Password</h2>
+
+        <form id="changePasswordForm">
+          <div class="form-group">
+            <label for="current-password">Current Password</label>
+            <input type="password" id="current-password" required />
+          </div>
+          <div class="form-group">
+            <label for="new-password">New Password</label>
+            <input type="password" id="new-password" required />
+          </div>
+          <div class="form-group">
+            <label for="confirm-password">Confirm New Password</label>
+            <input type="password" id="confirm-password" required />
+          </div>
+
+          <button type="submit">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= Delete Account Modal ================= -->
+
+    <div id="delete-account-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" id="close-delete-modal">&times;</span>
+        <h2>Delete Account</h2>
+
+        <p class="warning-text">⚠ This action cannot be undone. All your data will be permanently deleted.</p>
+
+        <form id="deleteAccountForm">
+          <div class="form-group">
+            <label for="delete-password">Enter your password to confirm</label>
+            <input type="password" id="delete-password" required />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteAccountModal()">Cancel</button>
+            <button type="submit" class="btn btn-danger">Delete Account Permanently</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= Scripts ================= -->
+    <script src="/pages/js/dashboard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  </body>
+</html>

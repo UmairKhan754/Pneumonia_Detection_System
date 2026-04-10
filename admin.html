@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>PneumoScan AI | Admin Panel</title>
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
+    <!-- Admin Styles -->
+    <link
+      rel="stylesheet"
+      href="/css/admin.css"
+    />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="navbar">
+        <div class="logo">
+          <div class="logo-text">
+            PneumoScan <span>Admin</span>
+          </div>
+        </div>
+
+        <div class="nav-links">
+          <a
+            href="#"
+            id="logoutBtn"
+            class="btn btn-danger"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Admin Content -->
+    <div class="admin-container">
+      <!-- Top heading + date -->
+      <div class="admin-header">
+        <h1 class="page-title">Admin Dashboard</h1>
+
+        <div
+          class="date"
+          id="todayDate"
+        >
+          <!-- JS will set current date -->
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stats-grid">
+        <!-- Total Radiologists -->
+        <div
+          class="stat-card"
+          id="totalRadiologistsCard"
+        >
+          <div class="stat-title">Total Radiologists</div>
+          <div
+            class="stat-value"
+            id="totalRadiologists"
+          >
+            0
+          </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div
+          class="stat-card"
+          id="pendingApprovalsCard"
+        >
+          <div class="stat-title">Pending Approvals</div>
+          <div
+            class="stat-value"
+            id="pendingApprovals"
+          >
+            0
+          </div>
+        </div>
+
+        <!-- Total Scans -->
+        <div
+          class="stat-card"
+          id="totalScansCard"
+        >
+          <div class="stat-title">Total Scans</div>
+          <div
+            class="stat-value"
+            id="totalScans"
+          >
+            0
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Applications -->
+      <div
+        class="pending-applications"
+        id="pendingApplicationsSection"
+        style="display: none"
+      >
+        <div class="applications-header">
+          <h3 class="section-title">Pending Applications</h3>
+
+          <button
+            class="btn btn-primary"
+            id="closePendingApplications"
+          >
+            <i class="fas fa-times"></i>
+            Hide List
+          </button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Specialization</th>
+              <th>Hospital</th>
+              <th>Applied On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="applicationsTable">
+            <!-- Filled by admin.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Active Radiologists -->
+      <div
+        class="radiologists-list"
+        id="radiologistsListSection"
+        style="display: none"
+      >
+        <div class="radiologists-header">
+          <h3 class="section-title">Active Radiologists</h3>
+
+          <button
+            class="btn btn-primary"
+            id="closeRadiologistsList"
+          >
+            <i class="fas fa-times"></i>
+            Hide List
+          </button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Specialization</th>
+              <th>Hospital</th>
+              <th>Approved On</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="radiologistsTable">
+            <!-- Filled by admin.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- All Reports -->
+      <div
+        class="reports-list"
+        id="reportsListSection"
+        style="display: none"
+      >
+        <div class="radiologists-header">
+          <h3 class="section-title">All Reports</h3>
+
+          <button
+            class="btn btn-primary"
+            id="closeReportsList"
+          >
+            <i class="fas fa-times"></i>
+            Hide List
+          </button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Patient Name</th>
+              <th>Gender</th>
+              <th>Radiologist</th>
+              <th>Date</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTable">
+            <!-- Filled by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Radiologist Details Modal -->
+    <div
+      class="modal"
+      id="radiologistModal"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Radiologist Details</h3>
+          <button class="close-modal">&times;</button>
+        </div>
+
+        <div id="radiologistDetails">
+          <!-- Filled by admin.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+    <!-- Admin Logic -->
+    <script src="/pages/js/admin.js"></script>
+  </body>
+</html>
