@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PneumoScan AI | Authentication</title>
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="/css/auth.css" />
+
+    <!-- (Kept from your original) Small inline helpers for field errors -->
+    <style>
+      .input-error { border: 1px solid red; }
+      .error-message { color: red; font-size: 0.85rem; margin-top: 0.25rem; display: none; }
+      /* NOTE: Full animation visuals (spinners/overlays) will be styled in /css/auth.css */
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <i class="fas fa-lungs logo-icon"></i>
+        <span class="logo-text">PneumoScan AI</span>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+      <div class="auth-container">
+        <!-- Left Visual Panel -->
+        <div class="auth-image">
+          <div class="auth-image-content">
+            <h2>PneumoScan AI</h2>
+            <p>Advanced pneumonia detection for radiologists</p>
+          </div>
+        </div>
+
+        <!-- Forms Column -->
+        <div class="auth-forms">
+          <!-- TABS -->
+          <div class="auth-tabs" role="tablist" aria-label="Authentication Tabs">
+            <div class="auth-tab active" role="tab" aria-selected="true" data-tab="login" tabindex="0">
+              Sign In
+            </div>
+            <div class="auth-tab" role="tab" aria-selected="false" data-tab="signup" tabindex="0">
+              Sign Up
+            </div>
+          </div>
+
+          <!-- LOGIN FORM -->
+          <div
+            class="auth-form active"
+            id="login-form"
+            role="tabpanel"
+            aria-labelledby="login"
+            tabindex="0"
+          >
+            <h3 class="form-title">Radiologist Login</h3>
+            <form id="loginForm" novalidate>
+              <div class="form-group">
+                <label for="login-email">Email Address</label>
+                <input type="email" id="login-email" class="form-control" required />
+                <div class="error-message" id="login-email-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="login-password">Password</label>
+                <input
+                  type="password"
+                  id="login-password"
+                  class="form-control"
+                  required
+                  minlength="6"
+                />
+                <div class="error-message" id="login-password-error"></div>
+              </div>
+
+              <!-- Button with spinner slot -->
+              <button
+                type="submit"
+                class="btn-primary"
+                id="loginSubmitBtn"
+                data-loading="false"
+                aria-busy="false"
+              >
+                <span class="btn-spinner" aria-hidden="true"></span>
+                <span class="btn-label"><i class="fas fa-sign-in-alt"></i> Login</span>
+              </button>
+
+              <button type="button" class="btn-link" id="forgot-password">
+                Forgot Password?
+              </button>
+
+              <!-- RESEND VERIFICATION BUTTON ADDED HERE -->
+              <button type="button" class="btn-link" id="resend-verification">
+              <i class="fas fa-redo-alt"></i> Resend Verification
+              </button>
+
+              <!-- Admin Login trigger -->
+              <button
+                type="button"
+                class="btn-accent"
+                id="admin-login-btn"
+                style="margin-top: 1rem; width: 100%"
+              >
+                <i class="fas fa-user-shield"></i> Login as Admin
+              </button>
+            </form>
+
+            <div class="auth-footer">
+              Don't have an account? <a href="#" id="show-signup">Sign up</a>
+            </div>
+          </div>
+
+          <!-- SIGNUP FORM -->
+          <div
+            class="auth-form"
+            id="signup-form"
+            role="tabpanel"
+            aria-labelledby="signup"
+            tabindex="0"
+          >
+            <h3 class="form-title">Create Your Account</h3>
+            <form id="signupForm" novalidate>
+              <div class="form-group">
+                <label for="signup-name">Full Name</label>
+                <input type="text" id="signup-name" class="form-control" required />
+                <div class="error-message" id="signup-name-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-email">Email Address</label>
+                <input type="email" id="signup-email" class="form-control" required />
+                <div class="error-message" id="signup-email-error"></div>
+              </div>
+
+              <!-- NEW: Role selection (Admin / Doctor) -->
+              <div class="form-group">
+                <label for="signup-role">Choose Role</label>
+                <select id="signup-role" class="form-control" required>
+                  <option value="">Select role</option>
+                  <!-- value = admin → Firestore role "admin" -->
+                  <option value="admin">Admin</option>
+                  <!-- value = radiologist → Firestore role "radiologist", label Doctor for user -->
+                  <option value="radiologist">Doctor</option>
+                </select>
+                <div class="error-message" id="signup-role-error"></div>
+              </div>
+
+              <!-- Specialization now behaves like gender dropdown:
+                   options will be controlled from auth.js based on selected role -->
+              <div class="form-group">
+                <label for="signup-specialization">Specialization</label>
+                <select id="signup-specialization" class="form-control" required>
+                  <option value="">Select specialization</option>
+                  <!-- auth.js will replace with:
+                       - Administrator (if role = admin)
+                       - Radiologist (if role = radiologist/Doctor)
+                  -->
+                </select>
+                <div class="error-message" id="signup-specialization-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-institution">Hospital/Clinic</label>
+                <input
+                  type="text"
+                  id="signup-institution"
+                  class="form-control"
+                  required
+                />
+                <div class="error-message" id="signup-institution-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-phone">Phone Number</label>
+                <input type="tel" id="signup-phone" class="form-control" required />
+                <div class="error-message" id="signup-phone-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-address">Address</label>
+                <textarea
+                  id="signup-address"
+                  class="form-control"
+                  rows="3"
+                  required
+                ></textarea>
+                <div class="error-message" id="signup-address-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-password">Password (min 6 characters)</label>
+                <input
+                  type="password"
+                  id="signup-password"
+                  class="form-control"
+                  required
+                  minlength="6"
+                />
+                <div class="error-message" id="signup-password-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-confirm">Confirm Password</label>
+                <input
+                  type="password"
+                  id="signup-confirm"
+                  class="form-control"
+                  required
+                />
+                <div class="error-message" id="signup-confirm-error"></div>
+              </div>
+
+              <!-- Button with spinner slot -->
+              <button
+                type="submit"
+                class="btn-primary"
+                id="signupSubmitBtn"
+                data-loading="false"
+                aria-busy="false"
+              >
+                <span class="btn-spinner" aria-hidden="true"></span>
+                <span class="btn-label"><i class="fas fa-user-plus"></i> Create Account</span>
+              </button>
+            </form>
+
+            <div class="auth-footer">
+              Already have an account? <a href="#" id="show-login">Login</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toasts (SR-friendly) -->
+      <div
+        class="toast-container"
+        id="toastContainer"
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
+    </main>
+
+    <!-- MODALS (Forgot + Admin) -->
+    <div
+      class="modal hidden"
+      id="forgot-password-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="forgotPasswordTitle"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="forgotPasswordTitle">Reset Password</h3>
+          <button class="close-modal" aria-label="Close">×</button>
+        </div>
+        <form id="forgotPasswordForm" novalidate>
+          <div class="form-group">
+            <label for="reset-email">Email Address</label>
+            <input type="email" id="reset-email" class="form-control" required />
+            <div class="error-message" id="reset-email-error"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn-secondary close-modal"
+              aria-label="Cancel"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="forgotSubmitBtn"
+              data-loading="false"
+              aria-busy="false"
+            >
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label"
+                ><i class="fas fa-paper-plane"></i> Send Reset Link</span
+              >
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      class="modal hidden"
+      id="admin-login-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminLoginTitle"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="adminLoginTitle">Admin Login</h3>
+          <button class="close-modal" aria-label="Close">×</button>
+        </div>
+        <form id="adminLoginForm" novalidate>
+          <div class="form-group">
+            <label for="admin-email">Email Address</label>
+            <input type="email" id="admin-email" class="form-control" required />
+            <div class="error-message" id="admin-email-error"></div>
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input
+              type="password"
+              id="admin-password"
+              class="form-control"
+              required
+            />
+            <div class="error-message" id="admin-password-error"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn-secondary close-modal"
+              aria-label="Cancel"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="adminSubmitBtn"
+              data-loading="false"
+              aria-busy="false"
+            >
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label"
+                ><i class="fas fa-sign-in-alt"></i> Login</span
+              >
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RESEND VERIFICATION MODAL ADDED HERE -->
+    <div
+      class="modal hidden"
+      id="resend-verification-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resendVerificationTitle"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="resendVerificationTitle">
+            <i class="fas fa-envelope"></i> Resend Verification Email
+          </h3>
+          <button class="close-modal" aria-label="Close">×</button>
+        </div>
+        <form id="resendVerificationForm" novalidate>
+          <div class="form-group">
+            <label for="resend-email">Email Address</label>
+            <input 
+              type="email" 
+              id="resend-email" 
+              class="form-control" 
+              placeholder="Enter your registered email"
+              required 
+            />
+            <div class="error-message" id="resend-email-error"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn-secondary close-modal"
+              aria-label="Cancel"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="resendSubmitBtn"
+              data-loading="false"
+              aria-busy="false"
+            >
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label">
+                <i class="fas fa-paper-plane"></i> Resend Email
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- PROCESSING OVERLAYS (for non-blocking professional feedback) -->
+    <div
+      id="loginProcessing"
+      class="processing-overlay hidden"
+      aria-hidden="true"
+    >
+      <div class="processing-card">
+        <div class="processing-spinner" aria-hidden="true"></div>
+        <p class="processing-text">Logging in…</p>
+      </div>
+    </div>
+
+    <div
+      id="signupProcessing"
+      class="processing-overlay hidden"
+      aria-hidden="true"
+    >
+      <div class="processing-card">
+        <div class="processing-spinner" aria-hidden="true"></div>
+        <p class="processing-text">Creating account…</p>
+      </div>
+    </div>
+
+    <div
+      id="adminProcessing"
+      class="processing-overlay hidden"
+      aria-hidden="true"
+    >
+      <div class="processing-card">
+        <div class="processing-spinner" aria-hidden="true"></div>
+        <p class="processing-text">Logging in…</p>
+      </div>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+    <!-- App Logic -->
+    <script src="/pages/js/auth.js"></script>
+  </body>
+</html>
